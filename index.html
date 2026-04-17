@@ -324,6 +324,8 @@
     style="position:absolute;bottom:14px;left:16px;background:none;border:none;color:rgba(255,255,255,0.6);font-size:11px;font-weight:600;letter-spacing:.4px;cursor:pointer;font-family:inherit;padding:4px 6px;border-radius:6px;transition:color .2s;"
     onmouseenter="this.style.color='#7dd3fc'" onmouseleave="this.style.color='rgba(255,255,255,0.6)'"
     ontouchstart="this.style.color='#7dd3fc'" ontouchend="this.style.color='rgba(255,255,255,0.6)'">🔄 캐시 새로고침</button>
+  <!-- 제작자 표시 -->
+  <div style="position:absolute;bottom:18px;right:16px;color:rgba(255,255,255,0.6);font-size:10px;font-weight:700;letter-spacing:.5px;">Made by hrkim</div>
 </div>
 
 <!-- 메인 앱 -->
@@ -847,13 +849,36 @@
     mSel.value = String(mNum).padStart(2, '0');
   }
 
+  // 시작시간 → 종료시간 +1시간 자동 세팅
+  function autoSetEndTime(startHourId, startMinId, endHourId, endMinId) {
+    let h = parseInt(document.getElementById(startHourId).value, 10);
+    const m = parseInt(document.getElementById(startMinId).value, 10);
+    h = h + 1;
+    if (h > 24) h = 24;
+    setTimeVal(endHourId, endMinId, `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`);
+  }
+
   // 셀렉트 초기화
   buildTimeSelects('startHour', 'startMin', 9, 0);
-  buildTimeSelects('endHour', 'endMin', 9, 0);
+  buildTimeSelects('endHour', 'endMin', 10, 0);
   buildTimeSelects('mStartHour', 'mStartMin', 9, 0);
-  buildTimeSelects('mEndHour', 'mEndMin', 9, 0);
+  buildTimeSelects('mEndHour', 'mEndMin', 10, 0);
   buildTimeSelects('editStartHour', 'editStartMin', 9, 0);
-  buildTimeSelects('editEndHour', 'editEndMin', 9, 0);
+  buildTimeSelects('editEndHour', 'editEndMin', 10, 0);
+
+  // 시작시간 변경 시 종료시간 자동 +1시간
+  ['startHour','startMin'].forEach(id => {
+    document.getElementById(id).addEventListener('change', () =>
+      autoSetEndTime('startHour', 'startMin', 'endHour', 'endMin'));
+  });
+  ['mStartHour','mStartMin'].forEach(id => {
+    document.getElementById(id).addEventListener('change', () =>
+      autoSetEndTime('mStartHour', 'mStartMin', 'mEndHour', 'mEndMin'));
+  });
+  ['editStartHour','editStartMin'].forEach(id => {
+    document.getElementById(id).addEventListener('change', () =>
+      autoSetEndTime('editStartHour', 'editStartMin', 'editEndHour', 'editEndMin'));
+  });
 
   /* ── 모바일 폼 토글 ── */
   window.toggleMdpForm = function() {
