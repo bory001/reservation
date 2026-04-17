@@ -33,18 +33,38 @@
     position: fixed; inset: 0; background: var(--primary);
     display: flex; align-items: center; justify-content: center; z-index: 999;
   }
-  .lock-box { background: white; border-radius: 16px; padding: 2.5rem 2rem; width: 90%; max-width: 320px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
-  .lock-icon { font-size: 40px; margin-bottom: 1rem; }
-  .lock-title { font-size: 18px; font-weight: 700; color: var(--primary); margin-bottom: 0.25rem; }
-  .lock-sub { font-size: 13px; color: var(--text-muted); margin-bottom: 1.5rem; }
-  .lock-input { width: 100%; padding: 12px 14px; border: 1.5px solid var(--border); border-radius: 10px; font-size: 20px; font-family: inherit; text-align: center; letter-spacing: 8px; outline: none; margin-bottom: 1rem; transition: border-color 0.15s; }
-  .lock-input:focus { border-color: var(--primary); }
-  .lock-input.error { border-color: #ef4444; animation: shake 0.3s; }
-  @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)} }
-  .lock-btn { width: 100%; padding: 13px; background: var(--primary); color: white; border: none; border-radius: 10px; font-size: 15px; font-weight: 700; font-family: inherit; cursor: pointer; }
-  .lock-error { font-size: 12px; color: #ef4444; margin-top: 0.5rem; min-height: 18px; }
+  .lock-box {
+    background: white; border-radius: 20px; padding: 2rem 1.75rem 1.75rem;
+    width: 90%; max-width: 300px; text-align: center;
+    box-shadow: 0 24px 64px rgba(0,0,0,0.35);
+    display: flex; flex-direction: column; align-items: center; gap: 0;
+  }
+  .lock-icon { font-size: 38px; margin-bottom: 0.6rem; }
+  .lock-title { font-size: 16px; font-weight: 700; color: var(--primary); margin-bottom: 0.2rem; line-height: 1.4; }
+  .lock-sub { font-size: 12px; color: var(--text-muted); margin-bottom: 1.2rem; }
+  .lock-error { font-size: 12px; color: #ef4444; min-height: 18px; margin-bottom: 0.5rem; font-weight: 600; }
 
-  #app { display: none; }
+  /* 비번 도트 */
+  .pw-dots { display: flex; gap: 14px; margin-bottom: 8px; }
+  .pw-dot { width: 15px; height: 15px; border-radius: 50%; border: 2px solid #dde3ec; background: transparent; transition: all .2s; }
+  .pw-dot.filled { background: var(--primary); border-color: var(--primary); box-shadow: 0 0 8px rgba(26,58,92,.4); }
+  .pw-dot.error { background: #ef4444; border-color: #ef4444; }
+
+  /* 키패드 */
+  .pw-keypad { display: grid; grid-template-columns: repeat(3, 72px); gap: 9px; margin-top: 4px; }
+  .kbtn {
+    height: 60px; border-radius: 12px; background: #f4f6f9; border: 1px solid #dde3ec;
+    color: var(--text); font-family: inherit; font-size: 1.35rem; font-weight: 700;
+    cursor: pointer; transition: all .12s; display: flex; align-items: center; justify-content: center;
+    -webkit-tap-highlight-color: transparent; user-select: none;
+  }
+  .kbtn:hover { background: #e8edf4; }
+  .kbtn:active { background: var(--primary); color: white; transform: scale(.93); }
+  .kbtn.del { font-size: 1.1rem; color: var(--text-muted); }
+  .kbtn.empty { visibility: hidden; }
+  @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-7px)} 75%{transform:translateX(7px)} }
+
+  #app { display: none; flex-direction: column; min-height: 100vh; }
   header { background: var(--primary); color: white; padding: 0.5rem 1rem; min-height: 56px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; gap: 8px; }
   .header-left h1 { font-size: 15px; font-weight: 700; white-space: nowrap; }
   .header-left .subtitle { font-size: 10px; opacity: 0.7; white-space: nowrap; }
@@ -275,10 +295,30 @@
     <div class="lock-icon">🔒</div>
     <div class="lock-title">사내 예약 시스템<br>(법무법인 감천)</div>
     <div class="lock-sub">비밀번호를 입력하세요</div>
-    <input type="password" class="lock-input" id="lockInput" placeholder="● ● ● ●" maxlength="20"
-      onkeydown="if(event.key==='Enter') tryUnlock()">
-    <button class="lock-btn" onclick="tryUnlock()">입장</button>
+    <!-- 도트 표시 -->
+    <div class="pw-dots">
+      <div class="pw-dot" id="pd0"></div>
+      <div class="pw-dot" id="pd1"></div>
+      <div class="pw-dot" id="pd2"></div>
+      <div class="pw-dot" id="pd3"></div>
+    </div>
     <div class="lock-error" id="lockError"></div>
+    <!-- 숫자 키패드 -->
+    <div class="pw-keypad">
+      <button class="kbtn" onclick="lockKey('1')">1</button>
+      <button class="kbtn" onclick="lockKey('2')">2</button>
+      <button class="kbtn" onclick="lockKey('3')">3</button>
+      <button class="kbtn" onclick="lockKey('4')">4</button>
+      <button class="kbtn" onclick="lockKey('5')">5</button>
+      <button class="kbtn" onclick="lockKey('6')">6</button>
+      <button class="kbtn" onclick="lockKey('7')">7</button>
+      <button class="kbtn" onclick="lockKey('8')">8</button>
+      <button class="kbtn" onclick="lockKey('9')">9</button>
+      <div class="kbtn empty"></div>
+      <button class="kbtn" onclick="lockKey('0')">0</button>
+      <button class="kbtn del" onclick="lockDel()">⌫</button>
+    </div>
+  </div>
   <!-- 캐시 새로고침 버튼 -->
   <button onclick="hardRefresh()"
     style="position:absolute;bottom:14px;left:16px;background:none;border:none;color:rgba(255,255,255,0.6);font-size:11px;font-weight:600;letter-spacing:.4px;cursor:pointer;font-family:inherit;padding:4px 6px;border-radius:6px;transition:color .2s;"
@@ -698,25 +738,73 @@
     renderLegend();
   }
 
-  /* ── 잠금 ── */
-  window.tryUnlock = function() {
-    const val = document.getElementById('lockInput').value;
-    const inp = document.getElementById('lockInput');
-    if (val === currentPassword) {
-      document.getElementById('lockScreen').style.display = 'none';
-      document.getElementById('app').style.display = 'block';
-      document.getElementById('lockError').textContent = '';
-    } else {
-      document.getElementById('lockError').textContent = '비밀번호가 틀렸어요';
-      inp.classList.add('error'); inp.value = '';
-      setTimeout(() => inp.classList.remove('error'), 400);
+  /* ── 키패드 잠금 ── */
+  let _lockBuf = '';
+
+  function updateDots() {
+    for (let i = 0; i < 4; i++) {
+      const d = document.getElementById('pd' + i);
+      if (!d) continue;
+      d.classList.remove('filled', 'error');
+      if (i < _lockBuf.length) d.classList.add('filled');
+    }
+  }
+
+  function shakeError() {
+    const kp = document.querySelector('.pw-keypad');
+    const dots = document.querySelector('.pw-dots');
+    [kp, dots].forEach(el => {
+      if (!el) return;
+      el.style.animation = 'none';
+      requestAnimationFrame(() => { el.style.animation = 'shake .35s ease'; });
+    });
+    for (let i = 0; i < 4; i++) {
+      const d = document.getElementById('pd' + i);
+      if (d) { d.classList.remove('filled'); d.classList.add('error'); }
+    }
+    setTimeout(() => {
+      for (let i = 0; i < 4; i++) {
+        const d = document.getElementById('pd' + i);
+        if (d) d.classList.remove('error');
+      }
+    }, 600);
+  }
+
+  window.lockKey = function(n) {
+    if (_lockBuf.length >= 4) return;
+    _lockBuf += n;
+    updateDots();
+    document.getElementById('lockError').textContent = '';
+    if (_lockBuf.length === 4) {
+      setTimeout(() => checkAndUnlock(), 120);
     }
   };
+
+  window.lockDel = function() {
+    if (!_lockBuf.length) return;
+    _lockBuf = _lockBuf.slice(0, -1);
+    updateDots();
+  };
+
+  function checkAndUnlock() {
+    if (_lockBuf === currentPassword) {
+      document.getElementById('lockScreen').style.display = 'none';
+      document.getElementById('app').style.display = 'flex';
+      document.getElementById('lockError').textContent = '';
+      _lockBuf = '';
+      updateDots();
+    } else {
+      document.getElementById('lockError').textContent = '비밀번호가 틀렸어요';
+      shakeError();
+      _lockBuf = '';
+      setTimeout(() => updateDots(), 600);
+    }
+  }
   window.logout = function() {
     document.getElementById('app').style.display = 'none';
     document.getElementById('lockScreen').style.display = 'flex';
-    document.getElementById('lockInput').value = '';
     document.getElementById('lockError').textContent = '';
+    _lockBuf = ''; updateDots();
   };
 
   /* ── 시간 선택 셀렉트 초기화 ── */
