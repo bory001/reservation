@@ -279,7 +279,11 @@
       onkeydown="if(event.key==='Enter') tryUnlock()">
     <button class="lock-btn" onclick="tryUnlock()">입장</button>
     <div class="lock-error" id="lockError"></div>
-  </div>
+  <!-- 캐시 새로고침 버튼 -->
+  <button onclick="hardRefresh()"
+    style="position:absolute;bottom:14px;left:16px;background:none;border:none;color:rgba(255,255,255,0.6);font-size:11px;font-weight:600;letter-spacing:.4px;cursor:pointer;font-family:inherit;padding:4px 6px;border-radius:6px;transition:color .2s;"
+    onmouseenter="this.style.color='#7dd3fc'" onmouseleave="this.style.color='rgba(255,255,255,0.6)'"
+    ontouchstart="this.style.color='#7dd3fc'" ontouchend="this.style.color='rgba(255,255,255,0.6)'">🔄 캐시 새로고침</button>
 </div>
 
 <!-- 메인 앱 -->
@@ -1182,6 +1186,24 @@
 
   await loadConfig();
   renderCalendar();
+</script>
+<script>
+// ── 캐시 새로고침 ──
+window.hardRefresh = async function() {
+  const btn = event && event.target;
+  if (btn) { btn.textContent = '🔄 초기화중...'; btn.style.color = '#7dd3fc'; }
+  try {
+    if ('caches' in window) {
+      const keys = await caches.keys();
+      await Promise.all(keys.map(k => caches.delete(k)));
+    }
+    if ('serviceWorker' in navigator) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map(r => r.unregister()));
+    }
+  } catch(e) { console.warn('캐시 삭제 오류:', e); }
+  location.reload(true);
+};
 </script>
 <script>
 if ('serviceWorker' in navigator) {
