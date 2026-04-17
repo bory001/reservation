@@ -123,8 +123,6 @@
   .form-input, .form-select { width: 100%; padding: 9px 11px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; font-family: inherit; color: var(--text); background: var(--surface); outline: none; transition: border-color 0.15s; }
   .form-input:focus, .form-select:focus { border-color: var(--primary-light); }
   .time-row { display: grid; grid-template-columns: 1fr auto 1fr; gap: 6px; align-items: center; }
-  .time-pick select { width: 56px; }
-  .modal-time-pick select { width: 56px; }
   .time-sep { font-size: 13px; color: var(--text-muted); text-align: center; }
   .submit-btn { width: 100%; padding: 11px; background: var(--primary); color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 700; font-family: inherit; cursor: pointer; margin-top: 0.4rem; }
   .submit-btn:hover { background: var(--primary-light); }
@@ -240,24 +238,45 @@
   .ms-name { flex: 1; }
 
   /* ── 시간 숫자 선택 ── */
-  .time-pick { display: flex; align-items: center; gap: 3px; }
-  .time-pick select {
-    padding: 9px 6px; border: 1px solid var(--border); border-radius: 8px;
+  /* ── 시간 커스텀 피커 ── */
+  .time-pick { display: flex; align-items: center; gap: 3px; position: relative; }
+  .modal-time-pick { display: flex; align-items: center; gap: 3px; position: relative; }
+  .tp-colon { font-size: 16px; font-weight: 700; color: var(--text-muted); padding: 0 1px; }
+
+  /* 트리거 버튼 (기존 select 대체) */
+  .tp-btn {
+    min-width: 52px; padding: 8px 6px; border: 1px solid var(--border); border-radius: 8px;
     font-size: 15px; font-family: inherit; color: var(--text); background: var(--surface);
-    outline: none; transition: border-color 0.15s; cursor: pointer; text-align: center;
-    -webkit-appearance: none; appearance: none;
+    outline: none; cursor: pointer; text-align: center; font-weight: 600;
+    transition: border-color 0.15s; user-select: none; -webkit-tap-highlight-color: transparent;
   }
-  .time-pick select:focus { border-color: var(--primary-light); }
-  .time-pick .tp-colon { font-size: 16px; font-weight: 700; color: var(--text-muted); padding: 0 1px; }
-  .modal-time-pick { display: flex; align-items: center; gap: 3px; }
-  .modal-time-pick select {
-    padding: 10px 6px; border: 1px solid var(--border); border-radius: 8px;
-    font-size: 15px; font-family: inherit; color: var(--text); background: var(--surface);
-    outline: none; transition: border-color 0.15s; cursor: pointer; text-align: center;
-    -webkit-appearance: none; appearance: none; margin-bottom: 0;
+  .tp-btn:focus, .tp-btn.open { border-color: var(--primary-light); background: #eff6ff; }
+  .modal-time-pick .tp-btn:focus,
+  .modal-time-pick .tp-btn.open { border-color: var(--primary); background: #eff6ff; }
+
+  /* 드롭다운 팝업 */
+  .tp-popup {
+    display: none; position: fixed; background: white;
+    border: 1px solid var(--border); border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.18); z-index: 1000;
+    padding: 8px; width: 220px;
   }
-  .modal-time-pick select:focus { border-color: var(--primary); }
-  .modal-time-pick .tp-colon { font-size: 16px; font-weight: 700; color: var(--text-muted); padding: 0 1px; }
+  .tp-popup.show { display: block; }
+
+  /* 숫자 격자 */
+  .tp-grid { display: grid; gap: 4px; }
+  .tp-grid.hour-grid { grid-template-columns: repeat(5, 1fr); }
+  .tp-grid.min-grid  { grid-template-columns: repeat(6, 1fr); }
+  .tp-cell {
+    padding: 7px 2px; text-align: center; border-radius: 7px;
+    font-size: 13px; font-weight: 600; font-family: inherit;
+    cursor: pointer; color: var(--text); background: none; border: none;
+    transition: background 0.1s, color 0.1s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .tp-cell:hover { background: #eef3fa; }
+  .tp-cell.selected { background: var(--primary); color: white; }
+  .tp-popup-title { font-size: 10px; font-weight: 600; color: var(--text-muted); text-align: center; margin-bottom: 5px; letter-spacing: 0.5px; text-transform: uppercase; }
 
   .toast { position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--primary); color: white; padding: 11px 20px; border-radius: 10px; font-size: 13px; font-weight: 500; z-index: 700; opacity: 0; transition: all 0.3s; pointer-events: none; white-space: nowrap; }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
@@ -292,7 +311,7 @@
 <!-- 잠금 화면 -->
 <div id="lockScreen">
   <div class="lock-box">
-    <div class="lock-icon">🔒</div>
+    <div class="lock-icon">📅</div>
     <div class="lock-title">사내 예약 시스템<br>(법무법인 감천)</div>
     <div class="lock-sub">비밀번호를 입력하세요</div>
     <!-- 도트 표시 -->
@@ -390,15 +409,15 @@
             <label class="form-label">예약 시간</label>
             <div class="time-row">
               <div class="time-pick">
-                <select id="mStartHour"></select>
+                <button type="button" class="tp-btn" id="mStartHour" data-type="hour" data-target="mStart">09</button>
                 <span class="tp-colon">:</span>
-                <select id="mStartMin"></select>
+                <button type="button" class="tp-btn" id="mStartMin" data-type="min" data-target="mStart">00</button>
               </div>
               <span class="time-sep">~</span>
               <div class="time-pick">
-                <select id="mEndHour"></select>
+                <button type="button" class="tp-btn" id="mEndHour" data-type="hour" data-target="mEnd">10</button>
                 <span class="tp-colon">:</span>
-                <select id="mEndMin"></select>
+                <button type="button" class="tp-btn" id="mEndMin" data-type="min" data-target="mEnd">00</button>
               </div>
             </div>
           </div>
@@ -437,15 +456,15 @@
             <label class="form-label">예약 시간</label>
             <div class="time-row">
               <div class="time-pick">
-                <select id="startHour"></select>
+                <button type="button" class="tp-btn" id="startHour" data-type="hour" data-target="start">09</button>
                 <span class="tp-colon">:</span>
-                <select id="startMin"></select>
+                <button type="button" class="tp-btn" id="startMin" data-type="min" data-target="start">00</button>
               </div>
               <span class="time-sep">~</span>
               <div class="time-pick">
-                <select id="endHour"></select>
+                <button type="button" class="tp-btn" id="endHour" data-type="hour" data-target="end">10</button>
                 <span class="tp-colon">:</span>
-                <select id="endMin"></select>
+                <button type="button" class="tp-btn" id="endMin" data-type="min" data-target="end">00</button>
               </div>
             </div>
           </div>
@@ -514,15 +533,15 @@
     <label class="modal-label">예약 시간</label>
     <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:6px;align-items:center;margin-bottom:0.7rem;">
       <div class="modal-time-pick">
-        <select id="editStartHour"></select>
+        <button type="button" class="tp-btn" id="editStartHour" data-type="hour" data-target="editStart">09</button>
         <span class="tp-colon">:</span>
-        <select id="editStartMin"></select>
+        <button type="button" class="tp-btn" id="editStartMin" data-type="min" data-target="editStart">00</button>
       </div>
       <span style="font-size:13px;color:var(--text-muted);text-align:center;">~</span>
       <div class="modal-time-pick">
-        <select id="editEndHour"></select>
+        <button type="button" class="tp-btn" id="editEndHour" data-type="hour" data-target="editEnd">10</button>
         <span class="tp-colon">:</span>
-        <select id="editEndMin"></select>
+        <button type="button" class="tp-btn" id="editEndMin" data-type="min" data-target="editEnd">00</button>
       </div>
     </div>
     <label class="modal-label">메모 (선택)</label>
@@ -809,75 +828,123 @@
     _lockBuf = ''; updateDots();
   };
 
-  /* ── 시간 선택 셀렉트 초기화 ── */
-  function buildTimeSelects(hourId, minId, defaultH = 9, defaultM = 0) {
-    const hSel = document.getElementById(hourId);
-    const mSel = document.getElementById(minId);
-    hSel.innerHTML = '';
-    mSel.innerHTML = '';
-    for (let h = 0; h <= 24; h++) {
-      const opt = document.createElement('option');
-      opt.value = String(h).padStart(2, '0');
-      opt.textContent = String(h).padStart(2, '0');
-      if (h === defaultH) opt.selected = true;
-      hSel.appendChild(opt);
-    }
-    for (let m = 0; m <= 50; m += 10) {
-      const opt = document.createElement('option');
-      opt.value = String(m).padStart(2, '0');
-      opt.textContent = String(m).padStart(2, '0');
-      if (m === defaultM) opt.selected = true;
-      mSel.appendChild(opt);
-    }
-  }
+  /* ── 커스텀 시간 피커 ── */
+  // 버튼 ID → { hourId, minId } 매핑
+  const TP_PAIRS = {
+    start:     { h: 'startHour',     m: 'startMin',     eh: 'endHour',     em: 'endMin'     },
+    mStart:    { h: 'mStartHour',    m: 'mStartMin',    eh: 'mEndHour',    em: 'mEndMin'    },
+    editStart: { h: 'editStartHour', m: 'editStartMin', eh: 'editEndHour', em: 'editEndMin' },
+    end:       { h: 'endHour',       m: 'endMin'     },
+    mEnd:      { h: 'mEndHour',      m: 'mEndMin'    },
+    editEnd:   { h: 'editEndHour',   m: 'editEndMin' },
+  };
+
+  let _tpActive = null; // { btnEl, type, target }
 
   function getTimeVal(hourId, minId) {
-    return document.getElementById(hourId).value + ':' + document.getElementById(minId).value;
+    return document.getElementById(hourId).textContent.padStart(2,'0') + ':' +
+           document.getElementById(minId).textContent.padStart(2,'0');
   }
 
   function setTimeVal(hourId, minId, timeStr) {
     if (!timeStr) return;
     const [h, m] = timeStr.split(':');
-    const hSel = document.getElementById(hourId);
-    const mSel = document.getElementById(minId);
-    // 시 설정
-    hSel.value = h ? h.padStart(2, '0') : '09';
-    // 분은 10분 단위로 올림
+    const hNum = parseInt(h || '9', 10);
     let mNum = parseInt(m || '0', 10);
     mNum = Math.round(mNum / 10) * 10;
     if (mNum > 50) mNum = 50;
-    mSel.value = String(mNum).padStart(2, '0');
+    document.getElementById(hourId).textContent = String(hNum).padStart(2,'0');
+    document.getElementById(minId).textContent  = String(mNum).padStart(2,'0');
   }
 
-  // 시작시간 → 종료시간 +1시간 자동 세팅
   function autoSetEndTime(startHourId, startMinId, endHourId, endMinId) {
-    let h = parseInt(document.getElementById(startHourId).value, 10);
-    const m = parseInt(document.getElementById(startMinId).value, 10);
-    h = h + 1;
-    if (h > 24) h = 24;
-    setTimeVal(endHourId, endMinId, `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`);
+    let h = parseInt(document.getElementById(startHourId).textContent, 10);
+    const m = parseInt(document.getElementById(startMinId).textContent, 10);
+    h = Math.min(h + 1, 24);
+    document.getElementById(endHourId).textContent = String(h).padStart(2,'0');
+    document.getElementById(endMinId).textContent  = String(m).padStart(2,'0');
   }
 
-  // 셀렉트 초기화
-  buildTimeSelects('startHour', 'startMin', 9, 0);
-  buildTimeSelects('endHour', 'endMin', 10, 0);
-  buildTimeSelects('mStartHour', 'mStartMin', 9, 0);
-  buildTimeSelects('mEndHour', 'mEndMin', 10, 0);
-  buildTimeSelects('editStartHour', 'editStartMin', 9, 0);
-  buildTimeSelects('editEndHour', 'editEndMin', 10, 0);
+  function openTpPopup(btnEl, type, target) {
+    _tpActive = { btnEl, type, target };
+    const popup = document.getElementById('tpPopup');
+    const grid  = document.getElementById('tpGrid');
+    const title = document.getElementById('tpPopupTitle');
+    const curVal = parseInt(btnEl.textContent, 10);
 
-  // 시작시간 변경 시 종료시간 자동 +1시간
-  ['startHour','startMin'].forEach(id => {
-    document.getElementById(id).addEventListener('change', () =>
-      autoSetEndTime('startHour', 'startMin', 'endHour', 'endMin'));
+    grid.innerHTML = '';
+    if (type === 'hour') {
+      title.textContent = '시(Hour)';
+      grid.className = 'tp-grid hour-grid';
+      for (let v = 0; v <= 24; v++) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'tp-cell' + (v === curVal ? ' selected' : '');
+        btn.textContent = String(v).padStart(2,'0');
+        btn.addEventListener('click', () => pickTpValue(v));
+        grid.appendChild(btn);
+      }
+    } else {
+      title.textContent = '분(Min)';
+      grid.className = 'tp-grid min-grid';
+      for (let v = 0; v <= 50; v += 10) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'tp-cell' + (v === curVal ? ' selected' : '');
+        btn.textContent = String(v).padStart(2,'0');
+        btn.addEventListener('click', () => pickTpValue(v));
+        grid.appendChild(btn);
+      }
+    }
+
+    // 팝업 위치 계산
+    const rect = btnEl.getBoundingClientRect();
+    popup.style.display = 'block'; // 크기 계산용 임시
+    const pw = popup.offsetWidth;
+    const ph = popup.offsetHeight;
+    let left = rect.left;
+    let top  = rect.bottom + 4;
+    if (left + pw > window.innerWidth - 8) left = window.innerWidth - pw - 8;
+    if (top + ph > window.innerHeight - 8) top = rect.top - ph - 4;
+    popup.style.left = left + 'px';
+    popup.style.top  = top + 'px';
+    popup.classList.add('show');
+    btnEl.classList.add('open');
+  }
+
+  function pickTpValue(val) {
+    if (!_tpActive) return;
+    const { btnEl, type, target } = _tpActive;
+    btnEl.textContent = String(val).padStart(2,'0');
+    closeTpPopup();
+
+    // 시작시간 변경 시 종료시간 자동 +1시간
+    const isStart = target === 'start' || target === 'mStart' || target === 'editStart';
+    if (isStart) {
+      const pair = TP_PAIRS[target];
+      autoSetEndTime(pair.h, pair.m, pair.eh, pair.em);
+    }
+  }
+
+  function closeTpPopup() {
+    const popup = document.getElementById('tpPopup');
+    popup.classList.remove('show');
+    if (_tpActive) { _tpActive.btnEl.classList.remove('open'); _tpActive = null; }
+  }
+
+  // 모든 tp-btn에 클릭 이벤트 등록
+  document.querySelectorAll('.tp-btn').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      if (_tpActive && _tpActive.btnEl === btn) { closeTpPopup(); return; }
+      closeTpPopup();
+      openTpPopup(btn, btn.dataset.type, btn.dataset.target);
+    });
   });
-  ['mStartHour','mStartMin'].forEach(id => {
-    document.getElementById(id).addEventListener('change', () =>
-      autoSetEndTime('mStartHour', 'mStartMin', 'mEndHour', 'mEndMin'));
-  });
-  ['editStartHour','editStartMin'].forEach(id => {
-    document.getElementById(id).addEventListener('change', () =>
-      autoSetEndTime('editStartHour', 'editStartMin', 'editEndHour', 'editEndMin'));
+
+  // 팝업 외부 클릭 시 닫기
+  document.addEventListener('click', e => {
+    if (!e.target.closest('#tpPopup') && !e.target.closest('.tp-btn')) closeTpPopup();
   });
 
   /* ── 모바일 폼 토글 ── */
@@ -1325,5 +1392,11 @@ if ('serviceWorker' in navigator) {
     .catch(err => console.log('SW 실패', err));
 }
 </script>
+<!-- 시간 피커 팝업 (공용) -->
+<div class="tp-popup" id="tpPopup">
+  <div class="tp-popup-title" id="tpPopupTitle">시</div>
+  <div class="tp-grid" id="tpGrid"></div>
+</div>
+
 </body>
 </html>
