@@ -266,7 +266,7 @@
   /* 숫자 격자 */
   .tp-grid { display: grid; gap: 4px; }
   .tp-grid.hour-grid { grid-template-columns: repeat(5, 1fr); }
-  .tp-grid.min-grid  { grid-template-columns: repeat(6, 1fr); }
+  .tp-grid.min-grid  { grid-template-columns: repeat(4, 1fr); }
   .tp-cell {
     padding: 7px 2px; text-align: center; border-radius: 7px;
     font-size: 13px; font-weight: 600; font-family: inherit;
@@ -343,8 +343,6 @@
     style="position:absolute;bottom:14px;left:16px;background:none;border:none;color:rgba(255,255,255,0.6);font-size:11px;font-weight:600;letter-spacing:.4px;cursor:pointer;font-family:inherit;padding:4px 6px;border-radius:6px;transition:color .2s;"
     onmouseenter="this.style.color='#7dd3fc'" onmouseleave="this.style.color='rgba(255,255,255,0.6)'"
     ontouchstart="this.style.color='#7dd3fc'" ontouchend="this.style.color='rgba(255,255,255,0.6)'">🔄 캐시 새로고침</button>
-  <!-- 제작자 표시 -->
-  <div style="position:absolute;bottom:18px;right:16px;color:rgba(255,255,255,0.6);font-size:10px;font-weight:700;letter-spacing:.5px;">Made by hrkim</div>
 </div>
 
 <!-- 메인 앱 -->
@@ -851,8 +849,8 @@
     const [h, m] = timeStr.split(':');
     const hNum = parseInt(h || '9', 10);
     let mNum = parseInt(m || '0', 10);
-    mNum = Math.round(mNum / 10) * 10;
-    if (mNum > 50) mNum = 50;
+    mNum = Math.round(mNum / 5) * 5;
+    if (mNum > 55) mNum = 55;
     document.getElementById(hourId).textContent = String(hNum).padStart(2,'0');
     document.getElementById(minId).textContent  = String(mNum).padStart(2,'0');
   }
@@ -887,7 +885,7 @@
     } else {
       title.textContent = '분(Min)';
       grid.className = 'tp-grid min-grid';
-      for (let v = 0; v <= 50; v += 10) {
+      for (let v = 0; v <= 55; v += 5) {
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.className = 'tp-cell' + (v === curVal ? ' selected' : '');
