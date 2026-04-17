@@ -929,6 +929,7 @@
   function closeTpPopup() {
     const popup = document.getElementById('tpPopup');
     popup.classList.remove('show');
+    popup.style.display = '';
     if (_tpActive) { _tpActive.btnEl.classList.remove('open'); _tpActive = null; }
   }
 
